@@ -16,6 +16,8 @@ func main() {
 
 	var ignorePath bool
 	flag.BoolVar(&ignorePath, "ignore-path", false, "Ignore the path when considering what constitutes a duplicate")
+	var unique bool
+	flag.BoolVar(&unique, "unique", false, "Replaces one parameter at a time ")
 	flag.Parse()
 
 	seen := make(map[string]bool)
@@ -49,19 +51,32 @@ func main() {
 			continue
 		}
 		seen[key] = true
-
-		qs := url.Values{}
+		u.Query().Set("id", "kjasdifasd")
+		qs := u.Query()
 		for param, vv := range u.Query() {
 			if appendMode {
-				qs.Set(param, vv[0]+flag.Arg(0))
+				if unique {
+					qs.Set(param, vv[0]+flag.Arg(0))
+					u.RawQuery = qs.Encode()
+					fmt.Printf("%s\n", u)
+					qs.Set(param, vv[0])
+				} else {
+					qs.Set(param, vv[0]+flag.Arg(0))
+				}
+			} else if unique {
+				qs.Set(param, flag.Arg(0))
+				u.RawQuery = qs.Encode()
+				fmt.Printf("%s\n", u)
+				qs.Set(param, vv[0])
 			} else {
 				qs.Set(param, flag.Arg(0))
 			}
 		}
 
-		u.RawQuery = qs.Encode()
-
-		fmt.Printf("%s\n", u)
+		if !unique {
+			u.RawQuery = qs.Encode()
+			fmt.Printf("%s\n", u)
+		}
 
 	}
 
